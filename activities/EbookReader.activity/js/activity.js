@@ -26,48 +26,38 @@ var app = new Vue({
   },
 
   created: function () {
-    requirejs(
-      ["sugar-web/activity/activity", "sugar-web/env"],
-      function (activity, env) {
-        activity.setup();
-      }
-    );
+    requirejs(["sugar-web/activity/activity", "sugar-web/env"], function (activity, env) {
+      activity.setup();
+    });
   },
 
   mounted: function () {
     var vm = this;
+    requirejs(["sugar-web/activity/activity", "sugar-web/env"], function (activity, env) {
+      env.getEnvironment(function (err, environment) {
+        document.getElementById("canvas").style.backgroundColor = environment.user.colorvalue.fill;
 
-    requirejs(
-      ["sugar-web/activity/activity", "sugar-web/env"],
-      function (activity, env) {
-        env.getEnvironment(function (err, environment) {
-          document.getElementById("canvas").style.backgroundColor =
-            environment.user.colorvalue.fill;
-
-          if (environment.objectId) {
-            activity.getDatastoreObject().loadAsText(function (error, metadata, data) {
-              if (!error && data) {
-                var parsed = JSON.parse(data);
-                vm.currentLibrary = parsed.library;
-                if (parsed.current !== undefined) {
-                  vm.currentBook = vm.currentLibrary.database[parsed.current];
-                  vm.currentEpub = ePub(
-                    vm.currentLibrary.information.fileprefix + vm.currentBook.file
-                  );
-                  vm.currentView = EbookReader;
-                } else if (vm.currentLibrary.database.length === 0) {
-                  vm.loadLibrary(defaultUrlLibrary);
-                }
-                document.getElementById("spinner").style.visibility = "hidden";
+        if (environment.objectId) {
+          activity.getDatastoreObject().loadAsText(function (error, metadata, data) {
+            if (!error && data) {
+              var parsed = JSON.parse(data);
+              vm.currentLibrary = parsed.library;
+              if (parsed.current !== undefined) {
+                vm.currentBook = vm.currentLibrary.database[parsed.current];
+                vm.currentEpub = ePub(vm.currentLibrary.information.fileprefix + vm.currentBook.file);
+                vm.currentView = EbookReader;
+              } else if (vm.currentLibrary.database.length === 0) {
+                vm.loadLibrary(defaultUrlLibrary);
               }
-            });
-          } else {
-            vm.loadLibrary(defaultUrlLibrary);
-            vm.saveContextToJournal();
-          }
-        });
-      }
-    );
+              document.getElementById("spinner").style.visibility = "hidden";
+            }
+          });
+        } else {
+          vm.loadLibrary(defaultUrlLibrary);
+          vm.saveContextToJournal();
+        }
+      });
+    });
 
     window.addEventListener("resize", function () {
       vm.onResize();
@@ -214,7 +204,6 @@ var app = new Vue({
             vm.currentView = EbookReader;
             book.spinner = false;
 
-            // Firefox internal hyperlink fix
             const readerContainer = document.getElementById("reader");
             if (readerContainer) {
               readerContainer.addEventListener("click", function (e) {
